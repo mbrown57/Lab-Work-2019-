@@ -39,3 +39,8 @@ rsconnect/
 .DS_Store
 
 arcos-md-baltimore-city-24510-itemized.tsv
+Labs/lab_05/data/mingo_buyer_per_year.csv
+Labs/lab_05/data/arcos-wv-mingo-54059-itemized.tsv
+Labs/lab_05/data/county_pills_per_year.csv
+Labs/lab_05/data/county_population_per_year.csv
+Labs/lab_05/data/mingo_buyer_addresses.csv
