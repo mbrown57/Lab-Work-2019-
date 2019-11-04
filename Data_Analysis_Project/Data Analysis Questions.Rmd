@@ -1,0 +1,86 @@
+---
+title: "Data_Analysis_Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+library(tidycensus)
+```
+```{r}
+deaths <- read_tsv("2006-2012.txt")
+```
+```{r}
+#Variable number for people in povrty B06012_002
+#Median household income variable B19013_001
+
+# Define API Key
+census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
+
+# If you need to look up variables, this is how you do it
+acs_variables <- load_variables(2017, "acs5" )
+
+#Using poverty variable for specific counties
+#QUESTION 1 - Are counties with a higher poverty rate more likely to have a higher death count? 
+county_povertyrate <- get_acs(geography = "county",
+              variables = "B06012_002", geometry = FALSE, summary_var = "B01001_001") %>% 
+  mutate(poverty_rate=estimate/summary_est)
+
+#QUESTION 2 - Are counties where the median income is lower places where more deaths occurred?
+#Using median income for specific counties
+county_medianincome <- get_acs(geography = "county",
+              variables = "B06011_001", geometry = FALSE)
+#Question 3 and 4 - Are men and women who are unemployed in certain counties the cause of higher death totals?
+#Using male unemployed totals for specific counties
+county_male_unemployment <- get_acs(geography = "county",
+              variables = "B12006_006", geometry = FALSE)
+county_female_unemployment <- get_acs(geography = "county",
+              variables = "B12006_011", geometry = FALSE)
+
+#Question 5 - Are counties with lower housing prices places where death rates were higher?
+county_median_household_prices <- get_acs(geography = "county",
+              variables = "B25105_001", geometry = FALSE)
+
+#Question 6 - Are counties with lower education levels places where death rates were higher?
+county_education_business_science_jobs <- get_acs(geography = "county",
+              variables = "B24011_010", geometry = FALSE)
+#Question 7 - Are counties with more caucasian citizens where death rates were higher?
+county_caucasian_population <- get_acs(geography = "county",
+              variables = "C02003_003", geometry = FALSE)
+#Question 8 - Are counties with more Latino citizens where death rates were higher?
+county_latino_population <- get_acs(geography = "county",
+              variables = "B03002_018", geometry = FALSE)
+#Question 9 - Are counties with more african american citizens where deathb rates were higher?
+county_africanamerican_population <- get_acs(geography = "county",
+              variables = "B02001_003", geometry = FALSE)
+#Question 10 - Are states with higher poverty rates places with more deaths?
+povertyrate_state <- get_acs(geography = "state",
+              variables = "B06012_002", geometry = FALSE, summary_var = "B01001_001") %>% 
+  mutate(poverty_rate=estimate/summary_est)
+#Question 11 - Are states with lower median income places with higher death rates?
+state_medianincome <- get_acs(geography = "state",
+              variables = "B06011_001", geometry = FALSE)
+#Question 12 - Are states with a higher caucasian population places where the death rates were higher?
+state_caucasian_population <- get_acs(geography = "state",
+              variables = "C02003_003", geometry = FALSE)
+#Question 13 - Are states with a higher african american populatio places where the death rates were higher?
+state_africanamerican_population <- get_acs(geography = "state",
+              variables = "B02001_003", geometry = FALSE)
+#Question 14 - Are states with a hgiher latino population places where death rates were higher?
+state_latino_population <- get_acs(geography = "state",
+              variables = "B03002_018", geometry = FALSE)
+#Question 15 - Are states with less business and science jobs places where death rates were higher?
+state_education_business_science_jobs <- get_acs(geography = "state",
+              variables = "B24011_010", geometry = FALSE)
+  
+#median income, unemployment rate, hosuing prices, education levels, race, 
+
+```
+
+
