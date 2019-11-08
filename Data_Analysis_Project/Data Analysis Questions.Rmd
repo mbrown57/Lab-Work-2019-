@@ -10,11 +10,22 @@ knitr::opts_chunk$set(echo = TRUE)
 ## R Markdown
 
 ```{r}
+install.packages("corrr")
 library(tidyverse)
 library(tidycensus)
+library(scales)
+library(corrr)
+library(arcos)
+library(janitor)
 ```
 ```{r}
-deaths <- read_tsv("2006-2012.txt")
+# Load deaths
+deaths <- read_tsv("2006-2012.txt") %>%
+  filter(`Crude Rate` != "Suppressed", `Crude Rate` != "Unreliable", `Crude Rate` != "Missing")
+
+# Filter deaths
+
+
 ```
 ```{r}
 #Variable number for people in povrty B06012_002
@@ -78,9 +89,60 @@ state_latino_population <- get_acs(geography = "state",
 #Question 15 - Are states with less business and science jobs places where death rates were higher?
 state_education_business_science_jobs <- get_acs(geography = "state",
               variables = "B24011_010", geometry = FALSE)
-  
-#median income, unemployment rate, hosuing prices, education levels, race, 
 
+
+
+```
+```{r}
+joined_death_rate <- deaths %>% 
+  inner_join(county_povertyrate, by = c("County Code" = "GEOID")) %>%
+  mutate(`Crude Rate` = as.double(`Crude Rate`))
+
+#created scatter plot to show death rate in counties
+
+ggplot(joined_death_rate) +
+  geom_point(aes(poverty_rate, `Crude Rate`)) +
+  labs(x="Poverty Rate", y="Opiioid Death Rate", title="County population and total opioids in 2012", caption = "Source: DEA ARCOS database, via Washington Post", fill="buyer_county") +
+  scale_y_continuous(labels = comma) +
+  scale_x_continuous(labels = comma) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_smooth(aes(poverty_rate, `Crude Rate`), method = "lm", se = FALSE)
+joined_death_rate %>% 
+  select(poverty_rate, `Crude Rate`) %>%
+  correlate() 
+```
+```{r}
+#loaded pills per county and stored as API key
+key <- "uO4EK6I"
+
+arcos_county_pills_per_year <- summarized_county_annual(key = key) %>%
+  clean_names()
+
+arcos_county_population_per_year <- county_population(key = key) %>%
+  clean_names()
+
+pills_population <- arcos_county_population_per_year %>%
+  left_join(arcos_county_pills_per_year, by = c("countyfips", "year", "buyer_county","buyer_state")) %>%
+  group_by(countyfips, buyer_county, buyer_state) %>%
+  summarise(average_pills_per_year = mean(dosage_unit),
+            average_population_per_year = mean(population)) %>%
+  mutate(pills_per_person = (average_pills_per_year/average_population_per_year))
+```
+```{r}
+joined_death_rate_to_pills_per_person <- deaths %>% 
+  inner_join(pills_population, by = c("County Code" = "countyfips")) %>%
+  mutate(`Crude Rate` = as.double(`Crude Rate`))
+
+ggplot(joined_death_rate_to_pills_per_person) +
+  geom_point(aes(pills_per_person, `Crude Rate`)) +
+  labs(x="Pills per person", y="Opiioid Death Rate", title="County population and total opioids in 2012", caption = "Source: DEA ARCOS database, via Washington Post", fill="buyer_county") +
+  scale_y_continuous(labels = comma) +
+  scale_x_continuous(labels = comma) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_smooth(aes(pills_per_person, `Crude Rate`), method = "lm", se = FALSE)
+joined_death_rate_to_pills_per_person %>% 
+  select(pills_per_person, `Crude Rate`) %>%
+  correlate() 
 ```
 
 
