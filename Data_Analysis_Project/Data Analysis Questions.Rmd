@@ -63,7 +63,9 @@ county_education_business_science_jobs <- get_acs(geography = "county",
               variables = "B24011_010", geometry = FALSE)
 #Question 7 - Are counties with more caucasian citizens where death rates were higher?
 county_caucasian_population <- get_acs(geography = "county",
-              variables = "C02003_003", geometry = FALSE)
+              variables = "B02001_002", geometry = FALSE, summary_var = "B01001_001") %>% 
+  mutate(white_percent=estimate/summary_est)
+
 #Question 8 - Are counties with more Latino citizens where death rates were higher?
 county_latino_population <- get_acs(geography = "county",
               variables = "B03002_018", geometry = FALSE)
@@ -131,17 +133,29 @@ pills_population <- arcos_county_population_per_year %>%
 ```{r}
 joined_death_rate_to_pills_per_person <- deaths %>% 
   inner_join(pills_population, by = c("County Code" = "countyfips")) %>%
-  mutate(`Crude Rate` = as.double(`Crude Rate`))
+  mutate(`Crude Rate` = as.double(`Crude Rate`)) %>% 
+  inner_join(county_caucasian_population, by = c("County Code" = "GEOID"))
 
 ggplot(joined_death_rate_to_pills_per_person) +
   geom_point(aes(pills_per_person, `Crude Rate`)) +
-  labs(x="Pills per person", y="Opiioid Death Rate", title="County population and pills per person in 2012", caption = "Source: DEA ARCOS database, via Washington Post", fill="buyer_county") +
+  labs(x="Pills per person", y="Opioid Death Rate", title="County population and pills per person in 2012", caption = "Source: DEA ARCOS database, via Washington Post", fill="buyer_county") +
   scale_y_continuous(labels = comma) +
   scale_x_continuous(labels = comma) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  geom_smooth(aes(pills_per_person, `Crude Rate`), method = "lm", se = FALSE)
+  geom_smooth(aes(pills_per_person, `Crude Rate`), method = "lm", se = FALSE) +
+  geom_text(aes(pills_per_person, `Crude Rate`, label=paste0(buyer_county, " ", buyer_state)), data=subset(joined_death_rate_to_pills_per_person, `pills_per_person`> 150)) 
+
+ggplot(joined_death_rate_to_pills_per_person) +
+  geom_point(aes(pills_per_person, white_percent)) +
+  labs(x="Pills per person", y="Opioid Death Rate", title="County population and pills per person in 2012", caption = "Source: DEA ARCOS database, via Washington Post", fill="buyer_county") +
+  scale_y_continuous(labels = comma) +
+  scale_x_continuous(labels = comma) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_smooth(aes(pills_per_person, white_percent), method = "lm", se = FALSE) +
+  geom_text(aes(pills_per_person, white_percent, label=paste0(buyer_county, " ", buyer_state)), data=subset(joined_death_rate_to_pills_per_person, `pills_per_person`> 150)) 
+
 joined_death_rate_to_pills_per_person %>% 
-  select(pills_per_person, `Crude Rate`) %>%
+  select(pills_per_person, `Crude Rate`, white_percent) %>%
   correlate() 
 ```
 
