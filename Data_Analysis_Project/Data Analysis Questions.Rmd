@@ -46,13 +46,18 @@ county_povertyrate <- get_acs(geography = "county",
 #QUESTION 2 - Are counties where the median income is lower places where more deaths occurred?
 #Using median income for specific counties
 county_medianincome <- get_acs(geography = "county",
-              variables = "B06011_001", geometry = FALSE)
+              variables = "B06011_001", geometry = FALSE) 
+
 #Question 3 and 4 - Are men and women who are unemployed in certain counties the cause of higher death totals?
 #Using male unemployed totals for specific counties
 county_male_unemployment <- get_acs(geography = "county",
-              variables = "B12006_006", geometry = FALSE)
+              variables = "B12006_006", geometry = FALSE, summary_var = "B01001_001") %>%
+  mutate(male_UE_Rate=estimate/summary_est)
+
 county_female_unemployment <- get_acs(geography = "county",
-              variables = "B12006_011", geometry = FALSE)
+              variables = "B12006_011", geometry = FALSE, summary_var = "B01001_001") %>%
+  mutate(female_UE_Rate=estimate/summary_est)
+
 
 #Question 5 - Are counties with lower housing prices places where death rates were higher?
 county_median_household_prices <- get_acs(geography = "county",
@@ -69,7 +74,7 @@ county_caucasian_population <- get_acs(geography = "county",
 #Question 8 - Are counties with more Latino citizens where death rates were higher?
 county_latino_population <- get_acs(geography = "county",
               variables = "B03002_018", geometry = FALSE)
-#Question 9 - Are counties with more african american citizens where deathb rates were higher?
+#Question 9 - Are counties with more african american citizens where death rates were higher?
 county_africanamerican_population <- get_acs(geography = "county",
               variables = "B02001_003", geometry = FALSE)
 #Question 10 - Are states with higher poverty rates places with more deaths?
@@ -96,6 +101,9 @@ state_education_business_science_jobs <- get_acs(geography = "state",
 
 ```
 ```{r}
+#QUESTION 16 - Do places with a hgiher poverty rate also have a higher death Rate?
+
+#QUESTION 17 - Why are the appalachian region states the most consistent with poverty and death rate?
 joined_death_rate <- deaths %>% 
   inner_join(county_povertyrate, by = c("County Code" = "GEOID")) %>%
   mutate(`Crude Rate` = as.double(`Crude Rate`))
@@ -131,10 +139,21 @@ pills_population <- arcos_county_population_per_year %>%
   mutate(pills_per_person = (average_pills_per_year/average_population_per_year))
 ```
 ```{r}
+#QUESTION 17 - Was the Crude death rate more correlated to whether the county was more white or more concentrated with pills?
+
+#Question 18 - Even though the correlation is .24 that is still strong between percentage of whit epeople and death rate. Are white people more prone to opioid use?
+
+#QUESTION 19 - Is the trend along appalachian states consistent when it comes to main factors that contributed to the opioid crisis like poverty and pills per person and ethnicity?
+
+#Question 20 - Are places with higher pills per person known for having issues with drug usage?
+
 joined_death_rate_to_pills_per_person <- deaths %>% 
   inner_join(pills_population, by = c("County Code" = "countyfips")) %>%
   mutate(`Crude Rate` = as.double(`Crude Rate`)) %>% 
-  inner_join(county_caucasian_population, by = c("County Code" = "GEOID"))
+  inner_join(county_caucasian_population, by = c("County Code" = "GEOID")) %>%
+  inner_join(county_medianincome, by = c("County Code" = "GEOID")) %>%
+  inner_join(county_male_unemployment, by = c("County Code" = "GEOID")) %>%
+  inner_join(county_female_unemployment, by = c("County Code" = "GEOID"))
 
 ggplot(joined_death_rate_to_pills_per_person) +
   geom_point(aes(pills_per_person, `Crude Rate`)) +
@@ -155,8 +174,34 @@ ggplot(joined_death_rate_to_pills_per_person) +
   geom_text(aes(pills_per_person, white_percent, label=paste0(buyer_county, " ", buyer_state)), data=subset(joined_death_rate_to_pills_per_person, `pills_per_person`> 150)) 
 
 joined_death_rate_to_pills_per_person %>% 
-  select(pills_per_person, `Crude Rate`, white_percent) %>%
+  select(pills_per_person, `Crude Rate`, white_percent, estimate.y, male_UE_Rate, female_UE_Rate) %>%
   correlate() 
+
+#ESTIMATE.Y is the column for median household income
+#Question 21- Why would a negative relationship exist between the crude rate of deaths and median household income if more depressed places were hit harder by the opioid crisis?
+
+#Question 22- Would that mean that the wealthy have more access to opioids since they have the money to get a hold of them?
+
+#Question 23 - Why is there a negative relationship between unemployment for both men and women and deaths?
+
+#Question 24 - Why is the female death to unemployment rate substantianally more negative than the men?
+
+#Question 25 - Does unemployment not factor in to the death rate as much since the correlations are negative?
+
+#Question 26 - According to the NCBI, opioid deaths are highest among males age 18-25. Is there a correlation between age and death rate?
+#https://www.ncbi.nlm.nih.gov/books/NBK458661/
+
+#Question 27 - Hazard Kentucky of one of the towns that was most affected by the opoid crisis in the appalachian region of Kentucky. They also had large outbreaks of Hepatitis C. Is disease and accidental addiction in conjunction with depressed areas of the country when it comes to the opioid crisis?
+#https://money.cnn.com/2017/11/08/news/economy/hazard-kentucky-hep-c-crisis/index.html
+
+#Question 28 - maybe it's not unemployment in general, but is it the loss of mining jobs in the appalachian region in specific (mentioned in the previous article) that contributed to the pills per person and death rates?
+
+#Question 29 - Is the mining industry collapse to blame then for the spike in people using opioids in appalachia?
+
+#Question 30 - Is it fair to say that since a large portion of the deaths and pills are central to appalachia, that the crisis can be contained by eradicating the opioids there first?
+
+
+
 ```
 
 
